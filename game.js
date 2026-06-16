@@ -1,9 +1,10 @@
-const engine = Matter.Engine.create();
-const world = engine.world;
 
 /* =========================
-   RENDER
+   ENGINE SETUP
 ========================= */
+
+const engine = Matter.Engine.create();
+const world = engine.world;
 
 const render = Matter.Render.create({
     element: document.body,
@@ -28,13 +29,18 @@ const floor = Matter.Bodies.rectangle(
     window.innerHeight - 10,
     window.innerWidth,
     50,
-    {
-        isStatic: true,
-        render: { fillStyle: "#444" }
-    }
+    { isStatic: true, render: { fillStyle: "#444" } }
 );
 
 Matter.World.add(world, floor);
+
+/* =========================
+   STORAGE
+========================= */
+
+let chips = [];
+let selectedChip = null;
+let gunMode = false;
 
 /* =========================
    MOUSE DRAG
@@ -51,13 +57,6 @@ const mouseConstraint = Matter.MouseConstraint.create(engine, {
 });
 
 Matter.World.add(world, mouseConstraint);
-
-/* =========================
-   STORAGE
-========================= */
-
-let chips = [];
-let gunMode = false;
 
 /* =========================
    SHAPES
@@ -80,7 +79,7 @@ function spawnCircle() {
 }
 
 /* =========================
-   VERITY RAGDOLL
+   VERITY
 ========================= */
 
 function spawnVerity() {
@@ -177,7 +176,7 @@ document.addEventListener("click", (e) => {
 });
 
 /* =========================
-   CHIPS SYSTEM
+   CHIPS
 ========================= */
 
 function spawnVelocityChip() {
@@ -186,10 +185,10 @@ function spawnVelocityChip() {
         render: { fillStyle: "lime" }
     });
 
+    chip.type = "chip";
+    chip.code = "velocity 5 0";
+
     Matter.World.add(world, chip);
-
-    Matter.Body.setVelocity(chip, { x: 5, y: 0 });
-
     chips.push(chip);
 }
 
@@ -199,16 +198,98 @@ function spawnJVSChip() {
         render: { fillStyle: "orange" }
     });
 
-    Matter.World.add(world, chip);
+    chip.type = "chip";
+    chip.code = `
+velocity 3 0
+say hello
+`;
 
-    runJVS(`
-velocity 4 0
-say Hello Verseveta
-`, chip);
+    Matter.World.add(world, chip);
+    chips.push(chip);
 }
 
 /* =========================
-   JVS ENGINE
+   CHIP RIGHT CLICK SYSTEM
+========================= */
+
+const menu = document.getElementById("chipMenu");
+const editor = document.getElementById("chipEditor");
+
+/* select chip */
+document.addEventListener("mousedown", (e) => {
+
+    const pos = { x: e.clientX, y: e.clientY };
+
+    const found = Matter.Query.point(chips, pos);
+
+    if (found.length > 0) {
+        selectedChip = found[0];
+    }
+});
+
+/* right click menu */
+document.addEventListener("contextmenu", (e) => {
+
+    e.preventDefault();
+
+    const pos = { x: e.clientX, y: e.clientY };
+
+    const found = Matter.Query.point(chips, pos);
+
+    if (found.length > 0) {
+
+        selectedChip = found[0];
+
+        menu.style.left = e.clientX + "px";
+        menu.style.top = e.clientY + "px";
+        menu.classList.remove("hidden");
+    } else {
+        menu.classList.add("hidden");
+    }
+});
+
+/* =========================
+   MENU ACTIONS
+========================= */
+
+function debugChip() {
+    if (!selectedChip) return;
+    alert(selectedChip.code);
+}
+
+function editChip() {
+    if (!selectedChip) return;
+
+    editor.classList.remove("hidden");
+    editor.value = selectedChip.code;
+}
+
+/* CTRL + ENTER SAVE */
+editor.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter" && e.ctrlKey && selectedChip) {
+
+        selectedChip.code = editor.value;
+
+        editor.classList.add("hidden");
+    }
+});
+
+function deleteChip() {
+
+    if (!selectedChip) return;
+
+    Matter.World.remove(world, selectedChip);
+
+    chips = chips.filter(c => c !== selectedChip);
+
+    selectedChip = null;
+
+    menu.classList.add("hidden");
+}
+
+/* =========================
+   JVS RUNNER
 ========================= */
 
 function runJVS(code, body) {
@@ -229,28 +310,18 @@ function runJVS(code, body) {
             });
         }
 
-        if (line.startsWith("force")) {
-
-            const [, x, y] = line.split(" ");
-
-            Matter.Body.applyForce(body, body.position, {
-                x: Number(x),
-                y: Number(y)
-            });
-        }
-
         if (line.startsWith("explode")) {
             explosion(body.position.x, body.position.y, 100);
         }
 
         if (line.startsWith("say")) {
-            console.log("[JVS]", line.replace("say", "").trim());
+            console.log("[JVS]", line.replace("say", ""));
         }
     }
 }
 
 /* =========================
-   IMPORTANT FIX (GLOBAL ACCESS)
+   GLOBAL EXPORT
 ========================= */
 
 window.spawnBox = spawnBox;
