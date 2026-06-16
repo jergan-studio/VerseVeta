@@ -1,34 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Verseveta</title>
-<link rel="stylesheet" href="style.css">
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:sans-serif;
+}
+
+#toolbar{
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:10;
+    background:white;
+    padding:8px;
+    border-radius:8px;
+}
+
+button{
+    margin:3px;
+}
+</style>
 </head>
 
 <body>
 
 <div id="toolbar">
+    <button onclick="spawnBox()">Box</button>
+    <button onclick="spawnCircle()">Circle</button>
+    <button onclick="spawnVerity()">Verity</button>
 
-<button onclick="spawnVerity()">Spawn Verity</button>
+    <button onclick="spawnVelocityChip()">Velocity Chip</button>
+    <button onclick="spawnJVSChip()">JVS Chip</button>
 
-<button onclick="spawnBox()">Box</button>
-<button onclick="spawnCircle()">Circle</button>
-
-<button onclick="giveGun()">Gun</button>
-<button onclick="explode()">Explosion</button>
-
-<button onclick="saveWorkshop()">Save</button>
-<button onclick="loadWorkshop()">Load</button>
-
+    <button onclick="giveGun()">Gun</button>
+    <button onclick="explode()">Explosion</button>
 </div>
 
-<canvas id="world"></canvas>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
-
-<script src="workshop.js"></script>
-<script src="jvs.js"></script>
 <script src="game.js"></script>
 
 </body>
