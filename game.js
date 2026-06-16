@@ -1,11 +1,9 @@
-const canvas = document.getElementById("world");
-
 const engine = Matter.Engine.create();
 const world = engine.world;
 
 const render = Matter.Render.create({
-    canvas,
-    engine,
+    element: document.body,
+    engine: engine,
     options:{
         width:window.innerWidth,
         height:window.innerHeight,
@@ -15,10 +13,9 @@ const render = Matter.Render.create({
 });
 
 Matter.Render.run(render);
+Matter.Runner.run(Matter.Runner.create(), engine);
 
-const runner = Matter.Runner.create();
-Matter.Runner.run(runner,engine);
-
+// ground
 const ground = Matter.Bodies.rectangle(
     window.innerWidth/2,
     window.innerHeight-20,
@@ -29,154 +26,128 @@ const ground = Matter.Bodies.rectangle(
 
 Matter.World.add(world,ground);
 
+// mouse drag
 const mouse = Matter.Mouse.create(render.canvas);
-
-const mouseConstraint =
-Matter.MouseConstraint.create(engine,{
-    mouse
-});
-
+const mouseConstraint = Matter.MouseConstraint.create(engine,{mouse});
 Matter.World.add(world,mouseConstraint);
 
-function spawnRectangle(){
+// storage
+let objects = [];
+let joints = [];
+let player = null;
 
-    const box = Matter.Bodies.rectangle(
-        300,
-        100,
-        80,
-        40,
-        {
-            render:{
-                fillStyle:"#666"
-            }
-        }
-    );
+/* ======================
+   BASIC SHAPES
+====================== */
 
-    Matter.World.add(world,box);
+function spawnBox(){
+    const b = Matter.Bodies.rectangle(300,100,60,60);
+    Matter.World.add(world,b);
+    objects.push(b);
 }
 
 function spawnCircle(){
-
-    const body = Matter.Bodies.circle(
-        300,
-        100,
-        30,
-        {
-            render:{
-                fillStyle:"#44AAFF"
-            }
-        }
-    );
-
-    Matter.World.add(world,body);
+    const c = Matter.Bodies.circle(300,100,30);
+    Matter.World.add(world,c);
+    objects.push(c);
 }
 
-function spawnTriangle(){
-
-    const body = Matter.Bodies.polygon(
-        300,
-        100,
-        3,
-        40,
-        {
-            render:{
-                fillStyle:"#AA44FF"
-            }
-        }
-    );
-
-    Matter.World.add(world,body);
-}
+/* ======================
+   VERITY (RAGDOLL)
+====================== */
 
 function spawnVerity(){
 
-    const face = Matter.Bodies.circle(
-        300,
-        100,
-        30,
-        {
-            render:{
-                fillStyle:"yellow"
-            }
-        }
-    );
+    const head = Matter.Bodies.circle(300,100,20);
+    const torso = Matter.Bodies.rectangle(300,160,40,60);
 
-    Matter.World.add(world,face);
+    const armL = Matter.Bodies.rectangle(260,160,15,50);
+    const armR = Matter.Bodies.rectangle(340,160,15,50);
+
+    const legL = Matter.Bodies.rectangle(280,220,15,60);
+    const legR = Matter.Bodies.rectangle(320,220,15,60);
+
+    const parts = [head,torso,armL,armR,legL,legR];
+
+    Matter.World.add(world,parts);
+
+    function link(a,b){
+        const c = Matter.Constraint.create({
+            bodyA:a,
+            bodyB:b,
+            stiffness:0.6
+        });
+        Matter.World.add(world,c);
+        joints.push(c);
+    }
+
+    link(head,torso);
+    link(torso,armL);
+    link(torso,armR);
+    link(torso,legL);
+    link(torso,legR);
+
+    player = {head,torso,parts};
 }
 
-function spawnVelocityChip(){
+/* ======================
+   WEAPONS
+====================== */
 
-    const chip = Matter.Bodies.rectangle(
-        300,
-        100,
-        100,
-        50,
-        {
-            render:{
-                fillStyle:"lime"
-            }
-        }
+let gunMode = false;
+
+function giveGun(){
+    gunMode = true;
+}
+
+/* shoot physics bullet */
+document.addEventListener("click",(e)=>{
+
+    if(!gunMode) return;
+
+    const bullet = Matter.Bodies.circle(
+        e.clientX,
+        e.clientY,
+        8,
+        {density:0.01}
     );
 
-    Matter.Body.setVelocity(chip,{
-        x:10,
-        y:0
+    Matter.World.add(world,bullet);
+
+    Matter.Body.applyForce(bullet,bullet.position,{
+        x:0.05,
+        y:-0.02
     });
 
-    Matter.World.add(world,chip);
-}
+    setTimeout(()=>{
+        Matter.World.remove(world,bullet);
+    },3000);
+});
 
-function spawnJVSChip(){
-
-    const chip = Matter.Bodies.rectangle(
-        300,
-        100,
-        120,
-        60,
-        {
-            render:{
-                fillStyle:"orange"
-            }
-        }
-    );
-
-    Matter.World.add(world,chip);
-
-    runJVS(`
-velocity 8 0
-`,chip);
-}
-
-function explosion(x,y,power){
-
-    world.bodies.forEach(body=>{
-
-        if(body.isStatic) return;
-
-        const dx = body.position.x-x;
-        const dy = body.position.y-y;
-
-        const dist = Math.sqrt(dx*dx+dy*dy);
-
-        if(dist < 200){
-
-            Matter.Body.applyForce(
-                body,
-                body.position,
-                {
-                    x:(dx/dist)*power*0.0005,
-                    y:(dy/dist)*power*0.0005
-                }
-            );
-        }
-    });
-}
+/* ======================
+   EXPLOSION WEAPON
+====================== */
 
 function explode(){
 
-    explosion(
-        window.innerWidth/2,
-        window.innerHeight/2,
-        100
-    );
+    const x = window.innerWidth/2;
+    const y = window.innerHeight/2;
+
+    world.bodies.forEach(b=>{
+
+        if(b.isStatic) return;
+
+        const dx = b.position.x - x;
+        const dy = b.position.y - y;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if(dist < 200){
+
+            Matter.Body.applyForce(b,b.position,{
+                x:dx * 0.0005,
+                y:dy * 0.0005
+            });
+        }
+    });
 }
