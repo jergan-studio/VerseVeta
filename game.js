@@ -1,6 +1,6 @@
 
 /* =========================
-   ENGINE SETUP
+   ENGINE
 ========================= */
 
 const engine = Matter.Engine.create();
@@ -21,7 +21,7 @@ Matter.Render.run(render);
 Matter.Runner.run(Matter.Runner.create(), engine);
 
 /* =========================
-   WORLD FLOOR
+   FLOOR
 ========================= */
 
 const floor = Matter.Bodies.rectangle(
@@ -29,13 +29,18 @@ const floor = Matter.Bodies.rectangle(
     window.innerHeight - 10,
     window.innerWidth,
     50,
-    {
-        isStatic: true,
-        render: { fillStyle: "#444" }
-    }
+    { isStatic: true, render: { fillStyle: "#444" } }
 );
 
 Matter.World.add(world, floor);
+
+/* =========================
+   STORAGE
+========================= */
+
+let chips = [];
+let selectedChip = null;
+let gunMode = false;
 
 /* =========================
    MOUSE DRAG
@@ -54,53 +59,34 @@ const mouseConstraint = Matter.MouseConstraint.create(engine, {
 Matter.World.add(world, mouseConstraint);
 
 /* =========================
-   STORAGE
-========================= */
-
-let chips = [];
-let selectedChip = null;
-let gunMode = false;
-
-/* =========================
-   HELPERS
-========================= */
-
-function getMouse(e) {
-    return { x: e.clientX, y: e.clientY };
-}
-
-/* =========================
-   SHAPES
+   BASIC OBJECTS
 ========================= */
 
 function spawnBox() {
-    const box = Matter.Bodies.rectangle(300, 100, 60, 60, {
-        render: { fillStyle: "#777" }
-    });
-
-    Matter.World.add(world, box);
+    Matter.World.add(world,
+        Matter.Bodies.rectangle(300, 100, 60, 60, {
+            render: { fillStyle: "#777" }
+        })
+    );
 }
 
 function spawnCircle() {
-    const circle = Matter.Bodies.circle(300, 100, 30, {
-        render: { fillStyle: "#4aa3ff" }
-    });
-
-    Matter.World.add(world, circle);
+    Matter.World.add(world,
+        Matter.Bodies.circle(300, 100, 30, {
+            render: { fillStyle: "#4aa3ff" }
+        })
+    );
 }
 
 /* =========================
-   VERITY RAGDOLL
+   VERITY
 ========================= */
 
 function spawnVerity() {
 
     const y = window.innerHeight - 200;
 
-    const head = Matter.Bodies.circle(300, y, 18, {
-        render: { fillStyle: "yellow" }
-    });
-
+    const head = Matter.Bodies.circle(300, y, 18, { render: { fillStyle: "yellow" } });
     const torso = Matter.Bodies.rectangle(300, y + 60, 40, 60);
 
     const armL = Matter.Bodies.rectangle(260, y + 60, 15, 50);
@@ -132,7 +118,7 @@ function spawnVerity() {
    EXPLOSION
 ========================= */
 
-function explosion(x, y, power = 100) {
+function explosion(x, y, power = 120) {
 
     world.bodies.forEach(b => {
 
@@ -156,7 +142,7 @@ function explosion(x, y, power = 100) {
 }
 
 function explode() {
-    explosion(window.innerWidth / 2, window.innerHeight / 2, 120);
+    explosion(innerWidth / 2, innerHeight / 2);
 }
 
 /* =========================
@@ -190,7 +176,7 @@ document.addEventListener("click", (e) => {
 });
 
 /* =========================
-   CHIP SYSTEM
+   CHIPS
 ========================= */
 
 function spawnVelocityChip() {
@@ -223,16 +209,16 @@ say hello
 }
 
 /* =========================
-   RIGHT CLICK MENU
+   CHIP MENU
 ========================= */
 
 const menu = document.getElementById("chipMenu");
 const editor = document.getElementById("chipEditor");
 
-/* SELECT CHIP */
+/* SELECT */
 document.addEventListener("mousedown", (e) => {
 
-    const mouse = getMouse(e);
+    const mouse = { x: e.clientX, y: e.clientY };
 
     const found = Matter.Query.point(chips, mouse);
 
@@ -241,12 +227,12 @@ document.addEventListener("mousedown", (e) => {
     }
 });
 
-/* OPEN MENU */
+/* RIGHT CLICK */
 document.addEventListener("contextmenu", (e) => {
 
     e.preventDefault();
 
-    const mouse = getMouse(e);
+    const mouse = { x: e.clientX, y: e.clientY };
 
     const found = Matter.Query.point(chips, mouse);
 
@@ -284,7 +270,6 @@ editor.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.ctrlKey && selectedChip) {
 
         selectedChip.code = editor.value;
-
         editor.classList.add("hidden");
     }
 });
@@ -303,7 +288,7 @@ function deleteChip() {
 }
 
 /* =========================
-   JVS ENGINE
+   RUN CHIP
 ========================= */
 
 function runJVS(code, body) {
@@ -324,28 +309,25 @@ function runJVS(code, body) {
             });
         }
 
-        if (line.startsWith("force")) {
-
-            const [, x, y] = line.split(" ");
-
-            Matter.Body.applyForce(body, body.position, {
-                x: Number(x),
-                y: Number(y)
-            });
+        if (line.startsWith("say")) {
+            console.log("[JVS]", line.replace("say", ""));
         }
 
         if (line.startsWith("explode")) {
-            explosion(body.position.x, body.position.y, 100);
-        }
-
-        if (line.startsWith("say")) {
-            console.log("[JVS]", line.replace("say", ""));
+            explosion(body.position.x, body.position.y);
         }
     }
 }
 
+function runChip() {
+
+    if (!selectedChip) return;
+
+    runJVS(selectedChip.code, selectedChip);
+}
+
 /* =========================
-   GLOBAL EXPORT (IMPORTANT)
+   GLOBAL EXPORT
 ========================= */
 
 window.spawnBox = spawnBox;
@@ -355,6 +337,7 @@ window.spawnVelocityChip = spawnVelocityChip;
 window.spawnJVSChip = spawnJVSChip;
 window.giveGun = giveGun;
 window.explode = explode;
+window.runChip = runChip;
 window.debugChip = debugChip;
 window.editChip = editChip;
 window.deleteChip = deleteChip;
