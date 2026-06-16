@@ -5,21 +5,29 @@
 <title>Verseveta</title>
 <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div id="toolbar">
-    <button onclick="spawnVerity()">Verity</button>
-    <button onclick="spawnRectangle()">Rectangle</button>
-    <button onclick="spawnCircle()">Circle</button>
-    <button onclick="spawnTriangle()">Triangle</button>
-    <button onclick="spawnVelocityChip()">Velocity Chip</button>
-    <button onclick="spawnJVSChip()">JVS Chip</button>
-    <button onclick="explode()">Explosion</button>
+
+<button onclick="spawnVerity()">Spawn Verity</button>
+
+<button onclick="spawnBox()">Box</button>
+<button onclick="spawnCircle()">Circle</button>
+
+<button onclick="giveGun()">Gun</button>
+<button onclick="explode()">Explosion</button>
+
+<button onclick="saveWorkshop()">Save</button>
+<button onclick="loadWorkshop()">Load</button>
+
 </div>
 
 <canvas id="world"></canvas>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+
+<script src="workshop.js"></script>
 <script src="jvs.js"></script>
 <script src="game.js"></script>
 
