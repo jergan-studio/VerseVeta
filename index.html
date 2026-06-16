@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Verseveta</title>
+
 <style>
 body{
     margin:0;
@@ -10,6 +11,7 @@ body{
     font-family:sans-serif;
 }
 
+/* toolbar */
 #toolbar{
     position:absolute;
     top:10px;
@@ -23,7 +25,39 @@ body{
 button{
     margin:3px;
 }
+
+/* CHIP MENU */
+#chipMenu {
+    position: absolute;
+    background: white;
+    border: 1px solid #333;
+    padding: 5px;
+    z-index: 9999;
+    border-radius: 6px;
+}
+
+#chipMenu button {
+    display: block;
+    width: 140px;
+    margin: 3px 0;
+}
+
+/* hidden utility */
+.hidden {
+    display: none;
+}
+
+/* editor */
+#chipEditor {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 250px;
+    height: 150px;
+    z-index: 9999;
+}
 </style>
+
 </head>
 
 <body>
@@ -39,6 +73,16 @@ button{
     <button onclick="giveGun()">Gun</button>
     <button onclick="explode()">Explosion</button>
 </div>
+
+<!-- CHIP MENU -->
+<div id="chipMenu" class="hidden">
+    <button onclick="debugChip()">Debug Code</button>
+    <button onclick="editChip()">Edit Code</button>
+    <button onclick="deleteChip()">Delete Chip</button>
+</div>
+
+<!-- CHIP EDITOR -->
+<textarea id="chipEditor" class="hidden"></textarea>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
 <script src="game.js"></script>
