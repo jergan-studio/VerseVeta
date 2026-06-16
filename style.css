@@ -1,0 +1,24 @@
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:sans-serif;
+}
+
+#world{
+    width:100vw;
+    height:100vh;
+}
+
+#toolbar{
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:100;
+    background:white;
+    padding:10px;
+    border-radius:8px;
+}
+
+button{
+    margin:2px;
+}
